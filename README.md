@@ -11,6 +11,7 @@ A lightweight, production-ready backend service designed to ingest payment lifec
 *   **ORM**: SQLAlchemy & Alembic. Alembic handles database migrations.
 *   **Design Paradigm**: The system is designed around **strict idempotency**. Incoming events are deduplicated at the database level using their `event_id` as the Primary Key. Status updates function as a simple state machine, keeping the transaction state consistent regardless of event duplication.
 
+
 ## Setup Instructions
 
 There are two ways to run this service locally: Native Python or Docker.
@@ -62,7 +63,7 @@ pytest
 **Public URL:** [https://solutions-hka6.onrender.com](https://solutions-hka6.onrender.com)  
 **Interactive API Docs:** [https://solutions-hka6.onrender.com/docs](https://solutions-hka6.onrender.com/docs)  
 
-**🎥 Demo Walkthrough:** *(Insert your Loom screen recording link here!)*
+**🎥 Demo Walkthrough:** <video controls src="1222f555-b15d-428c-aa71-2da04de534d9.webm" title="Demo Walkthrough"></video>
 
 The application is seamlessly deployed on **Render** (using a PostgreSQL database and a Python 3 Web Service). Since Alembic is configured, the deployment automatically runs `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT` upon building.
 
