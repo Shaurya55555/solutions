@@ -49,7 +49,7 @@ Once the server is running, you can access the interactive OpenAPI (Swagger) doc
 *   `GET /reconciliation/summary`: SQL-aggregated transaction counts/amounts grouped by date, merchant, and status.
 *   `GET /reconciliation/discrepancies`: SQL-based detection of inconsistent states (e.g. failed but settled, stuck in pending).
 
-*(A fully configured Postman Collection `Setu_Reconciliation_API.postman_collection.json` is also included in the repository).*
+*(A fully configured Postman Collection `setupoints.postman_collection.json` is also included in the repository).*
 
 ## Testing
 
@@ -59,13 +59,12 @@ Run them using:
 pytest
 ```
 
-## Deployment Details
+**Public URL:** [https://solutions-hka6.onrender.com](https://solutions-hka6.onrender.com)  
+**Interactive API Docs:** [https://solutions-hka6.onrender.com/docs](https://solutions-hka6.onrender.com/docs)  
 
-*(Candidate Note: You will deploy this to Render/Railway and put your public URL here)*
+**🎥 Demo Walkthrough:** *(Insert your Loom screen recording link here!)*
 
-**Public URL:** `[Insert Production URL Here]`
-
-The application can be seamlessly deployed on platforms like **Render**, **Railway**, or **Fly.io**. Since Alembic is configured, the deployment command simply needs to be `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT`. Just ensure a PostgreSQL database is attached and the `DATABASE_URL` environment variable is exposed to the web service.
+The application is seamlessly deployed on **Render** (using a PostgreSQL database and a Python 3 Web Service). Since Alembic is configured, the deployment automatically runs `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT` upon building.
 
 ## Assumptions & Tradeoffs
 
