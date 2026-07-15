@@ -63,7 +63,7 @@ pytest
 **Public URL:** [https://solutions-hka6.onrender.com](https://solutions-hka6.onrender.com)  
 **Interactive API Docs:** [https://solutions-hka6.onrender.com/docs](https://solutions-hka6.onrender.com/docs)  
 
-**🎥 Demo Walkthrough:** <video controls src="1222f555-b15d-428c-aa71-2da04de534d9.webm" title="Demo Walkthrough"></video>
+**🎥 Demo Walkthrough:** [Watch the Video on Google Drive](https://drive.google.com/file/d/1MwoxVuP26oJ0089EwkggjH8hLze8DT7p/view?usp=sharing)
 
 The application is seamlessly deployed on **Render** (using a PostgreSQL database and a Python 3 Web Service). Since Alembic is configured, the deployment automatically runs `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT` upon building.
 
