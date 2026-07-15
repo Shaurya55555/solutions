@@ -8,3 +8,5 @@ env/
 *.sqlite3
 alembic.ini
 instructions.md
+# Ignore SQLite DB
+app.db
