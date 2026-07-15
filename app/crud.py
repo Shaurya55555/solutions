@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 from fastapi import HTTPException
@@ -63,19 +63,50 @@ def process_payment_event(db: Session, event: schemas.PaymentEvent):
         
     return db_event
 
-def get_transactions(db: Session, skip: int = 0, limit: int = 100, merchant_id: str = None, status: str = None):
+def get_transactions(
+    db: Session, 
+    skip: int = 0, 
+    limit: int = 100, 
+    merchant_id: str = None, 
+    status: str = None,
+    start_date: datetime = None,
+    end_date: datetime = None,
+    sort_by: str = "updated_at",
+    sort_order: str = "desc"
+):
     query = db.query(models.Transaction)
+    
+    # Filtering
     if merchant_id:
         query = query.filter(models.Transaction.merchant_id == merchant_id)
     if status:
         query = query.filter(models.Transaction.status == status)
+    if start_date:
+        query = query.filter(models.Transaction.created_at >= start_date)
+    if end_date:
+        query = query.filter(models.Transaction.created_at <= end_date)
     
-    # Order by newest first
-    return query.order_by(models.Transaction.updated_at.desc()).offset(skip).limit(limit).all()
+    # Sorting
+    if sort_by == "amount":
+        order_col = models.Transaction.amount
+    elif sort_by == "created_at":
+        order_col = models.Transaction.created_at
+    else:
+        order_col = models.Transaction.updated_at
+        
+    if sort_order == "asc":
+        query = query.order_by(order_col.asc())
+    else:
+        query = query.order_by(order_col.desc())
+        
+    return query.offset(skip).limit(limit).all()
 
 def get_transaction(db: Session, transaction_id: str):
-    # Returns the transaction; events are accessible via the .events relationship
-    return db.query(models.Transaction).filter(models.Transaction.id == transaction_id).first()
+    # Use joinedload (N-to-1) and selectinload (1-to-N) to fetch all related data in exactly 2 SQL queries total, eliminating the N+1 problem.
+    return db.query(models.Transaction).options(
+        joinedload(models.Transaction.merchant),
+        selectinload(models.Transaction.events)
+    ).filter(models.Transaction.id == transaction_id).first()
 
 def get_reconciliation_summary(db: Session):
     # Aggregating directly in SQL using GROUP BY
@@ -117,7 +148,14 @@ def get_discrepancies(db: Session):
         models.Transaction.created_at < two_days_ago
     ).all()
     
+    # 3. Conflicting state transitions (e.g. duplicate terminal events fighting for state)
+    # Identifies transactions that have more than one terminal event in their history
+    conflicting_transitions = db.query(models.Transaction).join(models.Event).filter(
+        models.Event.event_type.in_(['settled', 'payment_failed'])
+    ).group_by(models.Transaction.id).having(func.count(models.Event.id) > 1).all()
+    
     return {
         "failed_but_settled": failed_but_settled,
-        "stuck_transactions": stuck_transactions
+        "stuck_transactions": stuck_transactions,
+        "conflicting_transitions": conflicting_transitions
     }

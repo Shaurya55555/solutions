@@ -31,7 +31,7 @@ class EventResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-class TransactionResponse(BaseModel):
+class TransactionListResponse(BaseModel):
     id: str
     merchant_id: str
     amount: float
@@ -40,7 +40,8 @@ class TransactionResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     
-    # Optionally include events if requesting full details
-    events: Optional[List[EventResponse]] = None
-
     model_config = ConfigDict(from_attributes=True)
+
+class TransactionDetailResponse(TransactionListResponse):
+    merchant: Optional[MerchantResponse] = None
+    events: List[EventResponse] = []

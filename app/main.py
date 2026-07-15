@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from datetime import datetime
 
 from app import schemas, crud
 from app.database import get_db
@@ -25,20 +26,27 @@ def ingest_event(event: schemas.PaymentEvent, db: Session = Depends(get_db)):
     db_event = crud.process_payment_event(db, event)
     return db_event
 
-@app.get("/transactions", response_model=List[schemas.TransactionResponse])
+@app.get("/transactions", response_model=List[schemas.TransactionListResponse])
 def list_transactions(
     skip: int = 0, 
     limit: int = 100, 
     merchant_id: Optional[str] = None, 
     status: Optional[str] = None, 
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    sort_by: Optional[str] = "updated_at",
+    sort_order: Optional[str] = "desc",
     db: Session = Depends(get_db)
 ):
     """
-    List transactions with optional filtering (merchant_id, status) and pagination.
+    List transactions with optional filtering (merchant_id, status, dates), sorting, and pagination.
     """
-    return crud.get_transactions(db, skip=skip, limit=limit, merchant_id=merchant_id, status=status)
+    return crud.get_transactions(
+        db, skip=skip, limit=limit, merchant_id=merchant_id, status=status, 
+        start_date=start_date, end_date=end_date, sort_by=sort_by, sort_order=sort_order
+    )
 
-@app.get("/transactions/{transaction_id}", response_model=schemas.TransactionResponse)
+@app.get("/transactions/{transaction_id}", response_model=schemas.TransactionDetailResponse)
 def get_transaction(transaction_id: str, db: Session = Depends(get_db)):
     """
     Fetch details of a specific transaction including its event history.
