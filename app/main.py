@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from sqlalchemy.orm import Session
 
 from app import schemas, crud
 from app.database import get_db
@@ -48,3 +47,20 @@ def get_transaction(transaction_id: str, db: Session = Depends(get_db)):
     if db_txn is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
     return db_txn
+
+@app.get("/reconciliation/summary")
+def get_reconciliation_summary(db: Session = Depends(get_db)):
+    """
+    Returns aggregated transaction counts and amounts grouped by date, merchant, and status.
+    """
+    return crud.get_reconciliation_summary(db)
+
+@app.get("/reconciliation/discrepancies")
+def get_reconciliation_discrepancies(db: Session = Depends(get_db)):
+    """
+    Identifies transactions with inconsistent states.
+    Examples: 
+    - Marked as settled but had a failed event previously.
+    - Stuck in processed state for > 48 hours without settling.
+    """
+    return crud.get_discrepancies(db)
