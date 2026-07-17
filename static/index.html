@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home — StrawberryPay</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <div class="topbar">
+      <h1>Dashboard</h1>
+    </div>
+    <div class="content">
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="label">Total Transactions</div>
+          <div class="value" id="total-txns">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Total Amount</div>
+          <div class="value" id="total-amt">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Discrepancies</div>
+          <div class="value red" id="total-disc">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>API Endpoints</h2>
+        <table>
+          <thead>
+            <tr><th>Method</th><th>Endpoint</th><th>Description</th><th></th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge payment_initiated">POST</span></td>
+              <td class="mono">/events</td>
+              <td>Ingest Event</td>
+              <td><a href="/ui/events" class="btn btn-outline" style="padding:4px 10px;font-size:12px;">Open →</a></td>
+            </tr>
+            <tr>
+              <td><span class="badge settled">GET</span></td>
+              <td class="mono">/transactions</td>
+              <td>List Transactions</td>
+              <td><a href="/ui/transactions" class="btn btn-outline" style="padding:4px 10px;font-size:12px;">Open →</a></td>
+            </tr>
+            <tr>
+              <td><span class="badge settled">GET</span></td>
+              <td class="mono">/transactions/{id}</td>
+              <td>Get Transaction</td>
+              <td><a href="/ui/transaction" class="btn btn-outline" style="padding:4px 10px;font-size:12px;">Open →</a></td>
+            </tr>
+            <tr>
+              <td><span class="badge settled">GET</span></td>
+              <td class="mono">/reconciliation/summary</td>
+              <td>Reconciliation Summary</td>
+              <td><a href="/ui/summary" class="btn btn-outline" style="padding:4px 10px;font-size:12px;">Open →</a></td>
+            </tr>
+            <tr>
+              <td><span class="badge settled">GET</span></td>
+              <td class="mono">/reconciliation/discrepancies</td>
+              <td>Discrepancies</td>
+              <td><a href="/ui/discrepancies" class="btn btn-outline" style="padding:4px 10px;font-size:12px;">Open →</a></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      initNav('home');
+      try {
+        const [txnRes, discRes] = await Promise.all([
+          fetch('/reconciliation/summary'),
+          fetch('/reconciliation/discrepancies')
+        ]);
+        const summary = await txnRes.json();
+        const disc = await discRes.json();
+
+        let totalTxns = 0, totalAmt = 0;
+        summary.forEach(r => { totalTxns += r.total_transactions; totalAmt += r.total_amount; });
+
+        document.getElementById('total-txns').textContent = totalTxns.toLocaleString();
+        document.getElementById('total-amt').textContent = '₹' + totalAmt.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
+        const discCount = (disc.failed_but_settled?.length || 0) + (disc.stuck_transactions?.length || 0) + (disc.conflicting_transitions?.length || 0);
+        document.getElementById('total-disc').textContent = discCount;
+      } catch {}
+    });
+  </script>
+</body>
+</html>

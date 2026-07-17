@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Summary — StrawberryPay</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <div class="topbar">
+      <h1>Reconciliation Summary</h1>
+      <span class="endpoint-tag get">GET /reconciliation/summary</span>
+    </div>
+    <div class="content">
+      <div id="stats-area"></div>
+      <div id="table-area"><div class="loading">Loading…</div></div>
+      <div class="response-box" id="response-box">
+        <div class="response-header">
+          <span>Raw Response</span>
+          <span class="status-code" id="res-status"></span>
+        </div>
+        <pre class="response-body" id="res-body"></pre>
+      </div>
+    </div>
+  </div>
+  <script src="/static/common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initNav('summary');
+      loadSummary();
+    });
+
+    async function loadSummary() {
+      try {
+        const res = await fetch(API + '/reconciliation/summary');
+        const data = await res.json();
+
+        document.getElementById('res-status').textContent = res.status;
+        document.getElementById('res-status').className = 'status-code ' + (res.ok ? 'ok' : 'error');
+        document.getElementById('res-body').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('response-box').classList.add('show');
+
+        if (!data.length) {
+          document.getElementById('table-area').innerHTML = '<div class="empty-state">No summary data</div>';
+          return;
+        }
+
+        let totalTxns = 0, totalAmt = 0;
+        const statusCounts = {};
+        data.forEach(r => {
+          totalTxns += r.total_transactions;
+          totalAmt += r.total_amount;
+          statusCounts[r.status] = (statusCounts[r.status] || 0) + r.total_transactions;
+        });
+
+        let statsHtml = '<div class="stats-row">';
+        statsHtml += '<div class="stat-card"><div class="label">Total Transactions</div><div class="value">' + totalTxns.toLocaleString() + '</div></div>';
+        statsHtml += '<div class="stat-card"><div class="label">Total Amount</div><div class="value">₹' + totalAmt.toLocaleString('en-IN', { maximumFractionDigits: 0 }) + '</div></div>';
+        for (const [status, count] of Object.entries(statusCounts)) {
+          statsHtml += '<div class="stat-card"><div class="label">' + status.replace('payment_', '') + '</div><div class="value">' + count.toLocaleString() + '</div></div>';
+        }
+        statsHtml += '</div>';
+        document.getElementById('stats-area').innerHTML = statsHtml;
+
+        let tableHtml = '<div class="card"><h2>Breakdown by Date &amp; Merchant</h2>';
+        tableHtml += '<table><thead><tr><th>Date</th><th>Merchant</th><th>Status</th><th>Count</th><th>Amount</th></tr></thead><tbody>';
+        data.slice(0, 200).forEach(r => {
+          tableHtml += '<tr><td>' + r.date + '</td><td>' + r.merchant_id + '</td>';
+          tableHtml += '<td><span class="badge ' + r.status + '">' + r.status.replace('payment_', '') + '</span></td>';
+          tableHtml += '<td>' + r.total_transactions + '</td>';
+          tableHtml += '<td>₹' + r.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) + '</td></tr>';
+        });
+        tableHtml += '</tbody></table></div>';
+        document.getElementById('table-area').innerHTML = tableHtml;
+      } catch {
+        document.getElementById('table-area').innerHTML = '<div class="empty-state">Error loading summary</div>';
+      }
+    }
+  </script>
+</body>
+</html>

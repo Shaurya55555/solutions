@@ -1,5 +1,7 @@
 import os
+# pyrefly: ignore [missing-import]
 from sqlalchemy import create_engine
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Default to SQLite for quick local development, but allow overriding via environment variable

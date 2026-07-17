@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transactions — StrawberryPay</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <div class="topbar">
+      <h1>Transactions</h1>
+      <span class="endpoint-tag get">GET /transactions</span>
+    </div>
+    <div class="content">
+      <form id="filter-form" class="filters">
+        <div class="filter-group">
+          <label for="f-merchant">Merchant ID</label>
+          <input type="text" id="f-merchant" placeholder="e.g. merchant_001">
+        </div>
+        <div class="filter-group">
+          <label for="f-status">Status</label>
+          <select id="f-status">
+            <option value="">All</option>
+            <option value="payment_initiated">Initiated</option>
+            <option value="payment_processed">Processed</option>
+            <option value="settled">Settled</option>
+            <option value="payment_failed">Failed</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="f-start">From</label>
+          <input type="date" id="f-start">
+        </div>
+        <div class="filter-group">
+          <label for="f-end">To</label>
+          <input type="date" id="f-end">
+        </div>
+        <button type="submit" class="btn btn-pink">Filter</button>
+        <button type="button" id="clear-filters" class="btn btn-outline">Clear</button>
+      </form>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>Transaction ID</th><th>Merchant</th><th>Amount</th><th>Currency</th><th>Status</th><th>Updated</th></tr>
+          </thead>
+          <tbody id="txn-tbody">
+            <tr><td colspan="6" class="loading">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <span id="page-info"></span>
+        <div>
+          <button id="prev-btn" class="btn btn-outline" onclick="changePage(-1)" disabled>← Prev</button>
+          <button id="next-btn" class="btn btn-outline" onclick="changePage(1)">Next →</button>
+        </div>
+      </div>
+
+      <div class="response-box" id="response-box">
+        <div class="response-header">
+          <span>Raw API Response</span>
+          <span class="status-code" id="res-status"></span>
+        </div>
+        <pre class="response-body" id="res-body"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/common.js"></script>
+  <script>
+    let currentSkip = 0;
+    const PAGE_SIZE = 20;
+    let filters = {};
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initNav('transactions');
+
+      document.getElementById('filter-form').addEventListener('submit', e => {
+        e.preventDefault();
+        currentSkip = 0;
+        filters = {
+          merchant_id: document.getElementById('f-merchant').value.trim(),
+          status: document.getElementById('f-status').value,
+          start_date: document.getElementById('f-start').value,
+          end_date: document.getElementById('f-end').value,
+        };
+        loadTransactions();
+      });
+
+      document.getElementById('clear-filters').addEventListener('click', () => {
+        document.getElementById('filter-form').reset();
+        filters = {};
+        currentSkip = 0;
+        loadTransactions();
+      });
+
+      loadTransactions();
+    });
+
+    async function loadTransactions() {
+      const tbody = document.getElementById('txn-tbody');
+      tbody.innerHTML = '<tr><td colspan="6" class="loading">Loading…</td></tr>';
+
+      const params = new URLSearchParams();
+      params.set('skip', currentSkip);
+      params.set('limit', PAGE_SIZE);
+      if (filters.merchant_id) params.set('merchant_id', filters.merchant_id);
+      if (filters.status) params.set('status', filters.status);
+      if (filters.start_date) params.set('start_date', filters.start_date + 'T00:00:00');
+      if (filters.end_date) params.set('end_date', filters.end_date + 'T23:59:59');
+
+      try {
+        const res = await fetch(API + '/transactions?' + params);
+        const data = await res.json();
+
+        document.getElementById('res-status').textContent = res.status;
+        document.getElementById('res-status').className = 'status-code ' + (res.ok ? 'ok' : 'error');
+        document.getElementById('res-body').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('response-box').classList.add('show');
+
+        if (!data.length) {
+          tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No transactions found</td></tr>';
+          updatePagination(0);
+          return;
+        }
+
+        tbody.innerHTML = data.map(t => `
+          <tr class="clickable" onclick="window.location.href='/ui/transaction?id=${t.id}'">
+            <td class="mono" title="${t.id}">${t.id.length > 16 ? t.id.slice(0, 16) + '…' : t.id}</td>
+            <td>${t.merchant_id}</td>
+            <td>₹${t.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+            <td>${t.currency}</td>
+            <td><span class="badge ${t.status}">${t.status.replace('payment_', '')}</span></td>
+            <td>${new Date(t.updated_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</td>
+          </tr>
+        `).join('');
+
+        updatePagination(data.length);
+      } catch {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Error loading transactions</td></tr>';
+      }
+    }
+
+    function updatePagination(count) {
+      document.getElementById('page-info').textContent = count ? 'Showing ' + (currentSkip + 1) + '–' + (currentSkip + count) : '';
+      document.getElementById('prev-btn').disabled = currentSkip === 0;
+      document.getElementById('next-btn').disabled = count < PAGE_SIZE;
+    }
+
+    function changePage(dir) {
+      currentSkip += dir * PAGE_SIZE;
+      if (currentSkip < 0) currentSkip = 0;
+      loadTransactions();
+    }
+  </script>
+</body>
+</html>

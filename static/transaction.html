@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaction Detail — StrawberryPay</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <div class="topbar">
+      <h1>Transaction Lookup</h1>
+      <span class="endpoint-tag get">GET /transactions/{id}</span>
+    </div>
+    <div class="content">
+      <div class="card">
+        <h2>Find a Transaction</h2>
+        <div class="lookup-row">
+          <input type="text" id="txn-id-input" placeholder="Enter transaction ID">
+          <button class="btn btn-pink" id="lookup-btn">Look Up</button>
+        </div>
+      </div>
+      <div id="detail-area"></div>
+      <div class="response-box" id="response-box">
+        <div class="response-header">
+          <span>Raw Response</span>
+          <span class="status-code" id="res-status"></span>
+        </div>
+        <pre class="response-body" id="res-body"></pre>
+      </div>
+    </div>
+  </div>
+  <script src="/static/common.js"></script>
+  <script src="/static/transaction.js"></script>
+</body>
+</html>

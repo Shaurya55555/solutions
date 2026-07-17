@@ -1,16 +1,57 @@
+# pyrefly: ignore [missing-import]
 from fastapi import FastAPI, Depends, status, HTTPException
+# pyrefly: ignore [missing-import]
+from fastapi.staticfiles import StaticFiles
+# pyrefly: ignore [missing-import]
+from fastapi.responses import FileResponse
+# pyrefly: ignore [missing-import]
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+import os
 
 from app import schemas, crud
 from app.database import get_db
 
 app = FastAPI(
-    title="Setu Payment Reconciliation API",
+    title="Payment Reconciliation API",
     description="Backend service for payment lifecycle events and reconciliation.",
     version="1.0.0"
 )
+
+# Serve static files (CSS, JS)
+static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+@app.get("/", include_in_schema=False)
+def serve_home():
+    """Serve the dashboard home page."""
+    return FileResponse(os.path.join(static_dir, "index.html"))
+
+@app.get("/ui/events", include_in_schema=False)
+def serve_events():
+    """Serve the event ingestion page."""
+    return FileResponse(os.path.join(static_dir, "events.html"))
+
+@app.get("/ui/transactions", include_in_schema=False)
+def serve_transactions():
+    """Serve the transactions list page."""
+    return FileResponse(os.path.join(static_dir, "transactions.html"))
+
+@app.get("/ui/transaction", include_in_schema=False)
+def serve_transaction_detail():
+    """Serve the transaction detail/lookup page."""
+    return FileResponse(os.path.join(static_dir, "transaction.html"))
+
+@app.get("/ui/summary", include_in_schema=False)
+def serve_summary():
+    """Serve the reconciliation summary page."""
+    return FileResponse(os.path.join(static_dir, "summary.html"))
+
+@app.get("/ui/discrepancies", include_in_schema=False)
+def serve_discrepancies():
+    """Serve the discrepancies page."""
+    return FileResponse(os.path.join(static_dir, "discrepancies.html"))
 
 @app.get("/health")
 def health_check():

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discrepancies — StrawberryPay</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <div class="topbar">
+      <h1>Discrepancies</h1>
+      <span class="endpoint-tag get">GET /reconciliation/discrepancies</span>
+    </div>
+    <div class="content">
+      <div id="disc-area"><div class="loading">Loading…</div></div>
+      <div class="response-box" id="response-box">
+        <div class="response-header">
+          <span>Raw Response</span>
+          <span class="status-code" id="res-status"></span>
+        </div>
+        <pre class="response-body" id="res-body"></pre>
+      </div>
+    </div>
+  </div>
+  <script src="/static/common.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initNav('discrepancies');
+      loadDiscrepancies();
+    });
+
+    async function loadDiscrepancies() {
+      const area = document.getElementById('disc-area');
+      try {
+        const res = await fetch(API + '/reconciliation/discrepancies');
+        const data = await res.json();
+
+        document.getElementById('res-status').textContent = res.status;
+        document.getElementById('res-status').className = 'status-code ' + (res.ok ? 'ok' : 'error');
+        document.getElementById('res-body').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('response-box').classList.add('show');
+
+        let html = '';
+        html += section('Settled with Prior Failure', 'red', data.failed_but_settled,
+          'Transactions marked settled but had a payment_failed event.');
+        html += section('Stuck Transactions (>48h)', 'orange', data.stuck_transactions,
+          'Stuck in initiated or processed for more than 48 hours.');
+        html += section('Conflicting State Transitions', 'blue', data.conflicting_transitions,
+          'Multiple terminal events (settled + failed) on the same transaction.');
+        area.innerHTML = html;
+      } catch {
+        area.innerHTML = '<div class="empty-state">Error loading discrepancies</div>';
+      }
+    }
+
+    function section(title, color, items, desc) {
+      let html = '<div class="discrepancy-section"><h3><span class="dot ' + color + '"></span> ' + title + '</h3>';
+      html += '<p style="font-size:12px;color:var(--text-light);margin-bottom:10px;">' + desc + '</p>';
+      if (items && items.length) {
+        html += '<div class="card"><table><thead><tr><th>Transaction ID</th><th>Merchant</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
+        items.forEach(t => {
+          html += '<tr class="clickable" onclick="window.location.href=\'/ui/transaction?id=' + t.id + '\'">';
+          html += '<td class="mono">' + t.id + '</td><td>' + t.merchant_id + '</td>';
+          html += '<td>₹' + t.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 }) + '</td>';
+          html += '<td><span class="badge ' + t.status + '">' + t.status.replace('payment_', '') + '</span></td></tr>';
+        });
+        html += '</tbody></table></div>';
+      } else {
+        html += '<div class="card"><div class="empty-state">None found ✓</div></div>';
+      }
+      html += '</div>';
+      return html;
+    }
+  </script>
+</body>
+</html>
