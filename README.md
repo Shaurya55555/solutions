@@ -60,12 +60,21 @@ Run them using:
 pytest
 ```
 
-**Public URL:** [https://solutions-hka6.onrender.com](https://solutions-hka6.onrender.com)  
-**Interactive API Docs:** [https://solutions-hka6.onrender.com/docs](https://solutions-hka6.onrender.com/docs)  
+## Deployment Details
 
-**🎥 Demo Walkthrough:** [Watch the Video on Google Drive](https://drive.google.com/file/d/1MwoxVuP26oJ0089EwkggjH8hLze8DT7p/view?usp=sharing)
+The application is deployed on **Render** using a managed PostgreSQL database and a Python 3 Web Service.
 
-The application is seamlessly deployed on **Render** (using a PostgreSQL database and a Python 3 Web Service). Since Alembic is configured, the deployment automatically runs `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT` upon building.
+*   **Public URL:** [https://solutions-hka6.onrender.com](https://solutions-hka6.onrender.com)  
+*   **Interactive API Docs:** [https://solutions-hka6.onrender.com/docs](https://solutions-hka6.onrender.com/docs)  
+*   **🎥 Demo Walkthrough:** [Watch the Video on Google Drive](https://drive.google.com/file/d/1MwoxVuP26oJ0089EwkggjH8hLze8DT7p/view?usp=sharing)
+
+### Render Configuration
+*   **Environment:** Python 3 Web Service
+*   **Database:** Render Managed PostgreSQL
+*   **Build Command:** `pip install -r requirements.txt`
+*   **Start Command:** `alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+The deployment is configured to automatically run database migrations (`alembic upgrade head`) before starting the FastAPI server. The environment variable `DATABASE_URL` is set in Render's dashboard to point to the managed PostgreSQL instance, ensuring the application seamlessly transitions from local SQLite to production PostgreSQL.
 
 ## Assumptions & Tradeoffs
 
